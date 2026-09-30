@@ -181,17 +181,25 @@ class ConfigureHelpdesk extends AbstractController
 
     public function prepareSuperUserDetailsXHR(Request $request)
     {
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
-        
-        // unset($_SESSION['USER_DETAILS']);
-
-        $_SESSION['USER_DETAILS'] = [
-            'name' => $request->request->get('name'),
-            'email' => $request->request->get('email'),
-            'password' => $request->request->get('password'),
+        $userDetails = [
+            'name'     => trim((string) $request->request->get('name')),
+            'email'    => trim((string) $request->request->get('email')),
+            'password' => (string) $request->request->get('password'),
         ];
+
+        if ($request->hasSession()) {
+            $session = $request->getSession();
+            $session->set('USER_DETAILS', $userDetails);
+        } else {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['USER_DETAILS'] = $userDetails;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['USER_DETAILS'] = $userDetails;
+        }
 
         return new Response(json_encode(['status' => true]), 200, self::DEFAULT_JSON_HEADERS);
     }
